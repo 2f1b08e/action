@@ -1,0 +1,93 @@
+name: Build Android APK from External Repository
+
+on:
+  workflow_dispatch:
+    inputs:
+      git_url:
+        description: 'Git repository URL to clone'
+        required: true
+        type: string
+      branch:
+        description: 'Branch to checkout'
+        required: false
+        default: 'main'
+        type: string
+      java_version:
+        description: 'Java version for building'
+        required: false
+        default: '17'
+        type: choice
+        options:
+          - '11'
+          - '17'
+          - '21'
+      main_module:
+        description: 'Main app module name'
+        required: false
+        default: 'app'
+        type: string
+
+env:
+  main_project_module: ${{ github.event.inputs.main_module }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Clone external repository
+        run: |
+          git clone --depth 1 --branch ${{ github.event.inputs.branch }} ${{ github.event.inputs.git_url }} ./project
+          cd project
+          echo "Repository cloned successfully"
+      
+      - name: Set current date as env variable
+        run: echo "date_today=$(date +'%Y-%m-%d-%H%M%S')" >> $GITHUB_ENV
+      
+      - name: Extract repository name
+        run: |
+          repo_name=$(basename ${{ github.event.inputs.git_url }} .git)
+          echo "repo_name=$repo_name" >> $GITHUB_ENV
+      
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: ${{ github.event.inputs.java_version }}
+          cache: 'gradle'
+      
+      - name: Change wrapper permissions
+        working-directory: ./project
+        run: chmod +x ./gradlew
+      
+      - name: Build APK Debug
+        working-directory: ./project
+        run: ./gradlew assembleDebug --no-daemon --parallel
+      
+      - name: Build APK Release
+        working-directory: ./project
+        run: ./gradlew assembleRelease --no-daemon --parallel
+        continue-on-error: true
+      
+      - name: Upload APK Debug
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.date_today }}-${{ env.repo_name }}-debug-apk
+          path: project/${{ env.main_project_module }}/build/outputs/apk/debug/*.apk
+          if-no-files-found: warn
+      
+      - name: Upload APK Release
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.date_today }}-${{ env.repo_name }}-release-apk
+          path: project/${{ env.main_project_module }}/build/outputs/apk/release/*.apk
+          if-no-files-found: ignore
+      
+      - name: Build summary
+        run: |
+          echo "### Build Complete! :rocket:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Repository:** ${{ github.event.inputs.git_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.event.inputs.branch }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Java Version:** ${{ github.event.inputs.java_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Date:** ${{ env.date_today }}" >> $GITHUB_STEP_SUMMARY
