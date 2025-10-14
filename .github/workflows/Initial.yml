@@ -1,10 +1,13 @@
-name: Flutter App Setup
+name: Flutter Android App Setup
 
 on:
-  workflow_dispatch: 
+  workflow_dispatch:
+  push:
+    branches:
+      - main
 
 permissions:
-  contents: write  
+  contents: write
 
 jobs:
   setup-flutter-app:
@@ -20,44 +23,46 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
       
-      # Setup Flutter with latest stable version
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'  # Uses latest stable version
+          channel: 'stable'
           cache: true
       
-      # Verify Flutter installation
       - name: Verify Flutter version
         run: flutter --version
       
-      # Create Flutter app structure if it doesn't exist
-      - name: Create Flutter app structure
+      - name: Create Flutter Android app
         run: |
           if [ ! -f "pubspec.yaml" ]; then
-            echo "Creating new Flutter app..."
-            flutter create --project-name App --org com.2f1b08e
+            echo "Creating new Flutter Android app..."
+            flutter create --project-name my_app --org com.2f1b08e --platforms android .
           else
             echo "Flutter app already exists"
           fi
       
-      # Get dependencies
       - name: Get dependencies
         run: flutter pub get
       
-      # Run Flutter analyze
-      - name: Analyze code
+      - name: Run Flutter analyze
         run: flutter analyze
       
-      # Run tests
       - name: Run tests
         run: flutter test
       
-      # Commit and push changes
+      - name: Build Android APK
+        run: flutter build apk --release
+      
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release
+          path: build/app/outputs/flutter-apk/app-release.apk
+      
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: Initialize Flutter app structure"
+          commit_message: "chore: Initialize Flutter Android app structure"
           commit_user_name: "github-actions[bot]"
           commit_user_email: "github-actions[bot]@users.noreply.github.com"
           commit_author: "GitHub Actions <github-actions[bot]@users.noreply.github.com>"
