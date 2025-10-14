@@ -1,7 +1,7 @@
-name: Create Dependabot Labels (CLI)
+name: Create Dependabot Labels
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:  # Manual trigger
   push:
     branches:
       - main
@@ -11,42 +11,77 @@ on:
 jobs:
   create-labels:
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    
+    env:
+      LABELS_JSON: |
+        [
+          {"name": "dependencies", "color": "0366d6", "description": "Pull requests that update a dependency file"},
+          {"name": "automated", "color": "1d76db", "description": "Automated updates"},
+          {"name": "auto-update", "color": "0e8a16", "description": "Automatic dependency updates"},
+          
+          {"name": "gradle", "color": "02303a", "description": "Pull requests that update Gradle dependencies"},
+          {"name": "java", "color": "b07219", "description": "Pull requests that update Java code or dependencies"},
+          {"name": "android", "color": "3ddc84", "description": "Pull requests that update Android dependencies"},
+          {"name": "kotlin", "color": "A97BFF", "description": "Pull requests that update Kotlin dependencies"},
+          
+          {"name": "npm", "color": "cb3837", "description": "Pull requests that update npm dependencies"},
+          {"name": "javascript", "color": "f1e05a", "description": "Pull requests that update JavaScript code or dependencies"},
+          {"name": "typescript", "color": "3178c6", "description": "Pull requests that update TypeScript code or dependencies"},
+          
+          {"name": "github-actions", "color": "2088FF", "description": "Pull requests that update GitHub Actions workflows"},
+          {"name": "ci-cd", "color": "1f6feb", "description": "Continuous integration and deployment updates"},
+          
+          {"name": "docker", "color": "0db7ed", "description": "Pull requests that update Docker dependencies"},
+          {"name": "python", "color": "3572A5", "description": "Pull requests that update Python code or dependencies"},
+          {"name": "pip", "color": "3776ab", "description": "Pull requests that update pip dependencies"},
+          {"name": "rust", "color": "dea584", "description": "Pull requests that update Rust dependencies"},
+          
+          {"name": "security", "color": "d73a4a", "description": "Security vulnerability fixes"},
+          {"name": "major", "color": "d93f0b", "description": "Major version updates"},
+          {"name": "minor", "color": "fbca04", "description": "Minor version updates"},
+          {"name": "patch", "color": "0e8a16", "description": "Patch version updates"}
+        ]
     
     steps:
-      - name: Create all Dependabot labels
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          # Core dependency labels
-          gh label create "dependencies" --color "0366d6" --description "Pull requests that update a dependency file" --force || true
-          gh label create "automated" --color "1d76db" --description "Automated updates" --force || true
-          gh label create "auto-update" --color "0e8a16" --description "Automatic dependency updates" --force || true
-          
-          # Gradle/Java/Android
-          gh label create "gradle" --color "02303a" --description "Pull requests that update Gradle dependencies" --force || true
-          gh label create "java" --color "b07219" --description "Pull requests that update Java code or dependencies" --force || true
-          gh label create "android" --color "3ddc84" --description "Pull requests that update Android dependencies" --force || true
-          gh label create "kotlin" --color "A97BFF" --description "Pull requests that update Kotlin dependencies" --force || true
-          
-          # npm/JavaScript/TypeScript
-          gh label create "npm" --color "cb3837" --description "Pull requests that update npm dependencies" --force || true
-          gh label create "javascript" --color "f1e05a" --description "Pull requests that update JavaScript code or dependencies" --force || true
-          gh label create "typescript" --color "3178c6" --description "Pull requests that update TypeScript code or dependencies" --force || true
-          
-          # GitHub Actions & CI/CD
-          gh label create "github-actions" --color "2088FF" --description "Pull requests that update GitHub Actions workflows" --force || true
-          gh label create "ci-cd" --color "1f6feb" --description "Continuous integration and deployment updates" --force || true
-          
-          # Other ecosystems
-          gh label create "docker" --color "0db7ed" --description "Pull requests that update Docker dependencies" --force || true
-          gh label create "python" --color "3572A5" --description "Pull requests that update Python code or dependencies" --force || true
-          gh label create "pip" --color "3776ab" --description "Pull requests that update pip dependencies" --force || true
-          gh label create "rust" --color "dea584" --description "Pull requests that update Rust dependencies" --force || true
-          
-          # Version type labels
-          gh label create "security" --color "d73a4a" --description "Security vulnerability fixes" --force || true
-          gh label create "major" --color "d93f0b" --description "Major version updates" --force || true
-          gh label create "minor" --color "fbca04" --description "Minor version updates" --force || true
-          gh label create "patch" --color "0e8a16" --description "Patch version updates" --force || true
-          
-          echo "✅ All labels created/updated successfully!"
+      - name: Create or update labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = JSON.parse(process.env.LABELS_JSON);
+            
+            for (const label of labels) {
+              try {
+                // Try to create the label
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: label.name,
+                  description: label.description || '',
+                  color: label.color
+                });
+                console.log(`✅ Created label: ${label.name}`);
+              } catch (error) {
+                if (error.status === 422) {
+                  // Label already exists, update it
+                  try {
+                    await github.rest.issues.updateLabel({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      name: label.name,
+                      description: label.description || '',
+                      color: label.color
+                    });
+                    console.log(`🔄 Updated existing label: ${label.name}`);
+                  } catch (updateError) {
+                    console.error(`❌ Error updating label '${label.name}': ${updateError.message}`);
+                  }
+                } else {
+                  console.error(`❌ Error creating label '${label.name}': ${error.message}`);
+                }
+              }
+            }
+            
+            console.log('
+🎉 Label creation/update complete!');
