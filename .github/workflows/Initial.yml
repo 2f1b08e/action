@@ -2,9 +2,6 @@ name: Flutter Android App Setup
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
 
 permissions:
   contents: write
