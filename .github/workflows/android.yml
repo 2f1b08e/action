@@ -51,7 +51,7 @@ jobs:
           echo "repo_name=$repo_name" >> $GITHUB_ENV
       
       - name: Set up JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'jetbrains'
           java-version: ${{ github.event.inputs.java_version }}
