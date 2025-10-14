@@ -1,0 +1,63 @@
+name: Flutter App Setup
+
+on:
+  workflow_dispatch: 
+
+permissions:
+  contents: write  
+
+jobs:
+  setup-flutter-app:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v
+      
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      
+      # Setup Flutter with latest stable version
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'  # Uses latest stable version
+          cache: true
+      
+      # Verify Flutter installation
+      - name: Verify Flutter version
+        run: flutter --version
+      
+      # Create Flutter app structure if it doesn't exist
+      - name: Create Flutter app structure
+        run: |
+          if [ ! -f "pubspec.yaml" ]; then
+            echo "Creating new Flutter app..."
+            flutter create --project-name App --org com.2f1b08e
+          else
+            echo "Flutter app already exists"
+          fi
+      
+      # Get dependencies
+      - name: Get dependencies
+        run: flutter pub get
+      
+      # Run Flutter analyze
+      - name: Analyze code
+        run: flutter analyze
+      
+      # Run tests
+      - name: Run tests
+        run: flutter test
+      
+      # Commit and push changes
+      - name: Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: Initialize Flutter app structure"
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "github-actions[bot]@users.noreply.github.com"
+          commit_author: "GitHub Actions <github-actions[bot]@users.noreply.github.com>"
