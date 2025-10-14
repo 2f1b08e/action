@@ -18,6 +18,7 @@ on:
         default: '17'
         type: choice
         options:
+          - '8'
           - '11'
           - '17'
           - '21'
@@ -52,9 +53,10 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
+          distribution: 'jetbrains'
           java-version: ${{ github.event.inputs.java_version }}
           cache: 'gradle'
+          check-latest: true
       
       - name: Change wrapper permissions
         working-directory: ./project
