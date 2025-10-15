@@ -20,42 +20,13 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
       
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          cache: true
+      - name: clear Flutter
+      - run: |
+          cd action
+          rm - rf *
+          
       
-      - name: Verify Flutter version
-        run: flutter --version
-      
-      - name: Create Flutter Android app
-        run: |
-          if [ ! -f "pubspec.yaml" ]; then
-            echo "Creating new Flutter Android app..."
-            flutter create --project-name my_app --org com.2f1b08e --platforms android .
-          else
-            echo "Flutter app already exists"
-          fi
-      
-      - name: Get dependencies
-        run: flutter pub get
-      
-      - name: Run Flutter analyze
-        run: flutter analyze
-      
-      - name: Run tests
-        run: flutter test
-      
-      - name: Build Android APK
-        run: flutter build apk --release
-      
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-release
-          path: build/app/outputs/flutter-apk/app-release.apk
-      
+        
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v7
         with:
