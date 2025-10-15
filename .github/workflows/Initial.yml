@@ -1,34 +1,47 @@
-name: Flutter Android App Setup
+name: Purge non-dotfiles
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/purge-non-dotfiles.yml"
 
 permissions:
   contents: write
 
 jobs:
-  setup-flutter-app:
+  purge:
     runs-on: ubuntu-latest
-    
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v5
-      
-      - name: Setup Java
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-      
-      - name: clear Flutter
-      - run: |
-          cd action
-          rm - rf *
-      
-      - name: Commit and push changes
-        uses: stefanzweifel/git-auto-commit-action@v7
-        with:
-          commit_message: "chore: Initialize Flutter Android app structure"
-          commit_user_name: "github-actions[bot]"
-          commit_user_email: "github-actions[bot]@users.noreply.github.com"
-          commit_author: "GitHub Actions <github-actions[bot]@users.noreply.github.com>"
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Delete everything except dotfiles
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s dotglob nullglob
+          # Build list: all entries except those starting with '.' (dotfiles/dirs)
+          to_delete=()
+          for p in *; do
+            # With dotglob enabled above, '*' includes dotfiles; exclude those explicitly
+            [[ "$(basename "$p")" == .* ]] && continue
+            to_delete+=("$p")
+          done
+          # Safety: no-op if nothing to delete
+          if (( ${#to_delete[@]} )); then
+            rm -rf -- "${to_delete[@]}"
+          fi
+          # Optionally also remove tracked files that may now be missing from index (clean staging)
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "Purge all non-dotfiles"
+            git push
+          else
+            echo "No changes to commit."
+          fi
