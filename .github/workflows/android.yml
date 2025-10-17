@@ -36,11 +36,11 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Clone external repository
-        run: |
-          git clone --depth 1 --branch ${{ github.event.inputs.branch }} ${{ github.event.inputs.git_url }} ./project
-          cd project
-          echo "Repository cloned successfully"
+      - uses: actions/checkout@v5
+        with:
+    # Repository name with owner. For example, actions/checkout
+    # Default: ${{ github.repository }}
+         repository: 2f1b08e/PixelPlay
       
       - name: Set current date as env variable
         run: echo "date_today=$(date +'%Y-%m-%d-%H%M%S')" >> $GITHUB_ENV
