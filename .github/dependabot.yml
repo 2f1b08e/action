@@ -9,9 +9,7 @@ updates:
       time: "02:00"
       timezone: "Asia/Kolkata"
     labels:
-      - "dependencies"
       - "github-actions"
-      - "automated"
     commit-message:
       prefix: "chore(actions)"
       include: "scope"
@@ -24,73 +22,6 @@ updates:
           - "minor"
           - "patch"
       actions-major:
-        patterns:
-          - "*"
-        update-types:
-          - "major"
-    
-  # Gradle - all dependencies with grouping
-  - package-ecosystem: "gradle"
-    directory: "/"
-    schedule:
-      interval: "daily"
-      time: "02:00"
-      timezone: "Asia/Kolkata"
-    labels:
-      - "dependencies"
-      - "gradle"
-      - "android"
-      - "automated"
-    commit-message:
-      prefix: "chore(gradle)"
-      include: "scope"
-    open-pull-requests-limit: 15
-    allow:
-      - dependency-type: "all"
-    groups:
-      gradle-minor-patch:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
-      gradle-major:
-        patterns:
-          - "*"
-        update-types:
-          - "major"
-    
-  # npm - production and dev dependencies
-  - package-ecosystem: "npm"
-    directory: "/"
-    schedule:
-      interval: "daily"
-      time: "02:00"
-      timezone: "Asia/Kolkata"
-    labels:
-      - "dependencies"
-      - "npm"
-      - "javascript"
-      - "automated"
-    commit-message:
-      prefix: "chore(npm)"
-      include: "scope"
-    open-pull-requests-limit: 15
-    allow:
-      - dependency-type: "all"
-    versioning-strategy: increase-if-necessary
-    groups:
-      npm-production:
-        dependency-type: "production"
-        update-types:
-          - "minor"
-          - "patch"
-      npm-development:
-        dependency-type: "development"
-        update-types:
-          - "minor"
-          - "patch"
-      npm-major:
         patterns:
           - "*"
         update-types:
